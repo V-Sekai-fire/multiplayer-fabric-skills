@@ -6,7 +6,7 @@ of force-pushing, and how to wire it up end-to-end.
 ## When to version
 
 - The remote branch is protected and rejects force-push.
-- GitHub auto-archives the branch name (e.g. `feat/module-http3` → `archived/`).
+- A team admin has archived the branch name (e.g. moved `feat/module-http3` → `archived/module-http3`) asynchronously.
 - The branch tip diverges from what the assembly needs and a clean history
   matters.
 
