@@ -2,9 +2,15 @@
 name: local-build-check
 description: Build multiplayer-fabric-godot locally to reproduce CI failures when GitHub Actions is clogged. Use when GHA queues are backed up and you need a faster answer on a failing branch.
 license: MIT
+status: tombstoned
 metadata:
   author: V-Sekai-fire
+  tombstoned_date: 2026-04-19
+  tombstone_reason: Superseded; content migrated into ci-check and assembly workflow.
 ---
+
+> **TOMBSTONED** — This skill is no longer maintained. Do not invoke it.
+> Content has been migrated. See `ci-check` for the current workflow.
 
 # SOP: Local build check (GHA fallback)
 
@@ -61,6 +67,47 @@ git -C multiplayer-fabric-godot commit -m "Fix build error"
 git -C multiplayer-fabric-godot push origin feat/<module>-NNN
 git -C multiplayer-fabric-godot checkout multiplayer-fabric
 ```
+
+## Checking all gitassembly branches independently
+
+The gitassembly file uses `remotes/v-sekai-fire/<branch>` notation, but the
+configured remote in the local checkout is **`origin`**. Always translate:
+
+```
+remotes/v-sekai-fire/feat/module-foo  →  origin/feat/module-foo
+remotes/v-sekai-fire/master           →  origin/master
+```
+
+To build every branch listed in `multiplayer-fabric-merge/gitassembly` one by one:
+
+```sh
+GODOT=multiplayer-fabric-godot
+SCONS_OPTS="tests=yes dev_build=yes compiledb=yes accesskit=no \
+  cache_path=$HOME/.cache/scons-godot use_llvm=yes ccache=sccache"
+
+for branch in \
+  origin/master \
+  origin/feat/module-keychain \
+  origin/feat/module-lasso \
+  origin/feat/engine-patches-002 \
+  origin/feat/engine-patch-control-gui-input \
+  origin/feat/module-http3-001 \
+  origin/feat/module-multiplayer-fabric-001 \
+  origin/feat/module-multiplayer-fabric-mmog-002 \
+  origin/feat/module-open-telemetry \
+  origin/feat/module-sandbox \
+  origin/feat/module-speech \
+  origin/feat/module-sqlite; do
+  echo "=== $branch ==="
+  git -C "$GODOT" checkout --detach "$branch"
+  (cd "$GODOT" && scons $SCONS_OPTS) && echo "PASS: $branch" || echo "FAIL: $branch"
+done
+
+git -C "$GODOT" checkout multiplayer-fabric
+```
+
+With a warm SCons cache each branch takes ~12 s. sccache shows 0 requests when
+SCons cache serves all objects (expected behavior — not a misconfiguration).
 
 ## After a successful local build
 
