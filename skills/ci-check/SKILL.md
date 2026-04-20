@@ -108,8 +108,18 @@ scons tests=yes dev_build=yes compiledb=yes accesskit=no \
   ccache=sccache
 ```
 
-Verify sccache is installed: `which sccache` (install via `cargo install sccache`
-or `brew install sccache`). Check hit rate after a build with `sccache --show-stats`.
+Verify sccache is installed: `which sccache`. Install if missing:
+
+```sh
+# macOS — Homebrew is required; install it first if absent:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install sccache
+
+# Linux:
+cargo install sccache
+```
+
+Check hit rate after a build with `sccache --show-stats`.
 
 Run on the failing branch's checkout to reproduce compiler errors locally.
 After a clean local build, push the fix and let GHA confirm on the next run.
