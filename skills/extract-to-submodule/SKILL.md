@@ -1,3 +1,11 @@
+---
+name: extract-to-submodule
+description: Pull a vendored directory out of an existing repo, publish it as a standalone GitHub repo under V-Sekai-fire, and wire it back in as a git submodule. Use when a directory has grown to merit its own repo and release history.
+license: MIT
+metadata:
+  author: V-Sekai-fire
+---
+
 # SOP: Extract a directory into an independent submodule
 
 How to pull a vendored directory out of an existing repo, publish it as a
@@ -30,7 +38,7 @@ git push -u origin main
 ### 3. Replace the vendored copy with a submodule
 
 Create a new versioned branch on the source godot branch
-(see `branch_versioning.md`), then:
+(see `branch-versioning`), then:
 
 ```sh
 git checkout -b feat/<module>-NNN origin/feat/<module>-00(N-1)
@@ -73,7 +81,7 @@ Add a row to the table in `README.md`:
 
 ### 7. Run sync check
 
-See `sync_check.md`.
+See `sync-check`.
 
 ## Pitfalls
 

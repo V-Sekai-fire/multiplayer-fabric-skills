@@ -1,3 +1,11 @@
+---
+name: sync-check
+description: Verify all submodules and the root multiplayer-fabric repo are fully pushed to origin with no unpushed commits. Use after any series of commits across multiple submodules.
+license: MIT
+metadata:
+  author: V-Sekai-fire
+---
+
 # SOP: Sync check
 
 Verify all submodules and the root repo are fully pushed to origin.

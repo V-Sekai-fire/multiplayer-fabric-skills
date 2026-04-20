@@ -1,3 +1,11 @@
+---
+name: assembly-conflict
+description: Fix merge conflicts that stop the multiplayer-fabric-merge assembler. Use when `elixir update_godot_v_sekai.exs` halts with a conflict error and reports a branch that needs manual resolution.
+license: MIT
+metadata:
+  author: V-Sekai-fire
+---
+
 # SOP: Assembly conflict resolution
 
 How to fix a merge conflict that stops `elixir update_godot_v_sekai.exs`
@@ -38,7 +46,7 @@ The `union` driver is built into git — no extra config needed.
    git -C multiplayer-fabric-merge show remotes/v-sekai-fire/<branch>:<file> | wc -l
    ```
 2. Remove the file from the later branch by creating a new versioned branch
-   (see `branch_versioning.md`).
+   (see `branch-versioning`).
 3. Update `gitassembly` to reference the new branch.
 
 ## Fix: content conflict (manual resolve)

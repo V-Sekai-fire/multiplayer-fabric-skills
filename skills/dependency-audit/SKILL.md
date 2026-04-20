@@ -1,3 +1,11 @@
+---
+name: dependency-audit
+description: Review a plan or TODO for hidden risks using known knowns, known unknowns, and unknown unknowns categories. Use before starting any implementation cycle that names external libraries, internal functions, or infrastructure components.
+license: MIT
+metadata:
+  author: V-Sekai-fire
+---
+
 # SOP: Dependency audit (known knowns / known unknowns / unknown unknowns)
 
 How to review a plan or TODO for hidden risks before starting implementation.

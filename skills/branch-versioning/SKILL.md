@@ -1,3 +1,11 @@
+---
+name: branch-versioning
+description: Create versioned branches (feat/foo-001, feat/foo-002) instead of force-pushing. Use when a branch is protected, archived by a team admin, or diverges from what the assembler needs.
+license: MIT
+metadata:
+  author: V-Sekai-fire
+---
+
 # SOP: Branch versioning
 
 When to create a versioned branch (`feat/foo-001`, `feat/foo-002`) instead
@@ -38,7 +46,7 @@ Never bypass branch protection with `--no-verify` or admin override.
    git branch --set-upstream-to=origin/feat/foo-002 feat/foo-002
    ```
 
-4. **Run sync check** (see `sync_check.md`).
+4. **Run sync check** (see `sync-check`).
 
 ## Naming convention
 

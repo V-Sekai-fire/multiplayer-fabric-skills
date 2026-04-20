@@ -1,3 +1,11 @@
+---
+name: ci-check
+description: Verify gitassembly branch references are consistent and no branch in multiplayer-fabric-godot has failing GitHub Actions runs. Use after any push to a feature branch or after editing gitassembly.
+license: MIT
+metadata:
+  author: V-Sekai-fire
+---
+
 # SOP: CI check — gitassembly sync and GitHub Actions
 
 How to verify that `gitassembly` is consistent and that no branch in
@@ -15,8 +23,9 @@ Verify:
 - Comments accurately describe what the branch contributes.
 
 ```sh
-# Check that all referenced branches exist on v-sekai-fire remote
-git -C multiplayer-fabric-godot remote show v-sekai-fire | grep -E "feat/|docs/"
+# Check that all referenced branches exist on origin
+git -C multiplayer-fabric-godot fetch origin
+git -C multiplayer-fabric-godot branch -r | grep -E "feat/|docs/" | sort
 ```
 
 ## 2. Check GitHub Actions
