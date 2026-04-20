@@ -86,7 +86,7 @@ git -C multiplayer-fabric-godot checkout multiplayer-fabric
 ## Fallback: local build when GitHub Actions is clogged
 
 If GHA queues are backed up and you need a faster answer, build locally
-using the `gscons` alias (mingw variation):
+using the `gscons` alias. Pick whichever toolchain is available:
 
 ```sh
 cd multiplayer-fabric-godot
@@ -94,13 +94,16 @@ cd multiplayer-fabric-godot
 # gscons expands to:
 # scons tests=yes dev_build=yes compiledb=yes accesskit=no cache_path="$HOME/.cache/scons-godot"
 
+# MinGW (cross-compile for Windows, Linux/macOS host):
 scons tests=yes dev_build=yes compiledb=yes accesskit=no \
   cache_path="$HOME/.cache/scons-godot" \
   platform=windows use_mingw=yes
+
+# Clang (native, any platform):
+scons tests=yes dev_build=yes compiledb=yes accesskit=no \
+  cache_path="$HOME/.cache/scons-godot" \
+  use_llvm=yes
 ```
 
-The `use_mingw=yes` flag selects the MinGW toolchain instead of MSVC.
-Run this on the failing branch's checkout to reproduce the same compiler
-errors that GHA would catch.
-
+Run on the failing branch's checkout to reproduce compiler errors locally.
 After a clean local build, push the fix and let GHA confirm on the next run.
