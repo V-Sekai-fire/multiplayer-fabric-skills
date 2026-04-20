@@ -1,6 +1,6 @@
 ---
 name: ci-check
-description: Verify gitassembly branch references are consistent and no branch in multiplayer-fabric-godot has failing GitHub Actions runs. Use after any push to a feature branch or after editing gitassembly. When GHA is clogged, run a local mingw build instead.
+description: Verify gitassembly branch references are consistent and no branch in multiplayer-fabric-godot has failing GitHub Actions runs. Use after any push to a feature branch or after editing gitassembly.
 license: MIT
 metadata:
   author: V-Sekai-fire
@@ -57,11 +57,7 @@ gh run view <run-id> --repo V-Sekai-fire/multiplayer-fabric-godot \
 
 The `static_checks.yml` workflow runs a formatting check over changed files.
 If it exits with code 1 and shows a diff, the diff is what the formatter
-wants to change. Apply the change locally, commit to the failing branch,
-and push.
-
-Example: `capitalised` → `capitalized` in a Markdown file flagged by the
-spell/format step.
+wants to change.
 
 Use the existing `multiplayer-fabric-godot` checkout as staging — do not
 clone a second copy. Create a versioned branch (see `branch-versioning`),
@@ -75,7 +71,6 @@ git -C multiplayer-fabric-godot add <file>
 git -C multiplayer-fabric-godot commit -m "Fix formatting per static checks"
 git -C multiplayer-fabric-godot push origin feat/<module>-NNN
 # update gitassembly in multiplayer-fabric-merge
-# return to previous branch
 git -C multiplayer-fabric-godot checkout multiplayer-fabric
 ```
 
@@ -99,43 +94,8 @@ Always return the godot working tree to its expected state after a fix:
 git -C multiplayer-fabric-godot checkout multiplayer-fabric
 ```
 
-## Fallback: local build when GitHub Actions is clogged
+If GHA queues are backed up, use the `local-build-check` skill instead.
 
-If GHA queues are backed up and you need a faster answer, build locally
-using the `gscons` alias. Always pass `ccache=sccache` — sccache is the
-compiler cache for this project and MUST be used whenever building locally.
+## Reference
 
-```sh
-cd multiplayer-fabric-godot
-
-# gscons expands to:
-# scons tests=yes dev_build=yes compiledb=yes accesskit=no cache_path="$HOME/.cache/scons-godot"
-
-# MinGW (cross-compile for Windows, Linux/macOS host):
-scons tests=yes dev_build=yes compiledb=yes accesskit=no \
-  cache_path="$HOME/.cache/scons-godot" \
-  platform=windows use_mingw=yes \
-  ccache=sccache
-
-# Clang (native, any platform):
-scons tests=yes dev_build=yes compiledb=yes accesskit=no \
-  cache_path="$HOME/.cache/scons-godot" \
-  use_llvm=yes \
-  ccache=sccache
-```
-
-Verify sccache is installed: `which sccache`. Install if missing:
-
-```sh
-# macOS — Homebrew is required; install it first if absent:
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-brew install sccache
-
-# Linux:
-cargo install sccache
-```
-
-Check hit rate after a build with `sccache --show-stats`.
-
-Run on the failing branch's checkout to reproduce compiler errors locally.
-After a clean local build, push the fix and let GHA confirm on the next run.
+This skill follows the Agent Skills format — see [references/references.bib](references/references.bib) (`agentskills2025specification`).
