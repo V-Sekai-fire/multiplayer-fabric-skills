@@ -1,6 +1,6 @@
 ---
 name: ci-check
-description: Verify gitassembly branch references are consistent and no branch in multiplayer-fabric-godot has failing GitHub Actions runs. Use after any push to a feature branch or after editing gitassembly.
+description: Verify gitassembly branch references are consistent and no branch in multiplayer-fabric-godot has failing GitHub Actions runs. Use after any push to a feature branch or after editing gitassembly. When GHA is clogged, run a local mingw build instead.
 license: MIT
 metadata:
   author: V-Sekai-fire
@@ -82,3 +82,25 @@ Always return the godot working tree to its expected state after a fix:
 ```sh
 git -C multiplayer-fabric-godot checkout multiplayer-fabric
 ```
+
+## Fallback: local build when GitHub Actions is clogged
+
+If GHA queues are backed up and you need a faster answer, build locally
+using the `gscons` alias (mingw variation):
+
+```sh
+cd multiplayer-fabric-godot
+
+# gscons expands to:
+# scons tests=yes dev_build=yes compiledb=yes accesskit=no cache_path="$HOME/.cache/scons-godot"
+
+scons tests=yes dev_build=yes compiledb=yes accesskit=no \
+  cache_path="$HOME/.cache/scons-godot" \
+  platform=windows use_mingw=yes
+```
+
+The `use_mingw=yes` flag selects the MinGW toolchain instead of MSVC.
+Run this on the failing branch's checkout to reproduce the same compiler
+errors that GHA would catch.
+
+After a clean local build, push the fix and let GHA confirm on the next run.
