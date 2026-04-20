@@ -86,7 +86,8 @@ git -C multiplayer-fabric-godot checkout multiplayer-fabric
 ## Fallback: local build when GitHub Actions is clogged
 
 If GHA queues are backed up and you need a faster answer, build locally
-using the `gscons` alias. Pick whichever toolchain is available:
+using the `gscons` alias. Always pass `ccache=sccache` — sccache is the
+compiler cache for this project and MUST be used whenever building locally.
 
 ```sh
 cd multiplayer-fabric-godot
@@ -97,13 +98,18 @@ cd multiplayer-fabric-godot
 # MinGW (cross-compile for Windows, Linux/macOS host):
 scons tests=yes dev_build=yes compiledb=yes accesskit=no \
   cache_path="$HOME/.cache/scons-godot" \
-  platform=windows use_mingw=yes
+  platform=windows use_mingw=yes \
+  ccache=sccache
 
 # Clang (native, any platform):
 scons tests=yes dev_build=yes compiledb=yes accesskit=no \
   cache_path="$HOME/.cache/scons-godot" \
-  use_llvm=yes
+  use_llvm=yes \
+  ccache=sccache
 ```
+
+Verify sccache is installed: `which sccache` (install via `cargo install sccache`
+or `brew install sccache`). Check hit rate after a build with `sccache --show-stats`.
 
 Run on the failing branch's checkout to reproduce compiler errors locally.
 After a clean local build, push the fix and let GHA confirm on the next run.
