@@ -54,6 +54,8 @@ Known permanent exclusions for this repo:
 | `multiplayer-fabric-desync` | Content-addressed storage (casync) — intended storage backend for baker output; keep until baker→desync integration is complete |
 | `multiplayer-fabric-sandbox` | Proof-of-concept UGC programming language (RISC-V sandbox) — core uncertainty for user-generated content runtime |
 | `multiplayer-fabric-webtransport` | Vendored fork — upstream requires patches that cannot be upstreamed; own build is the only viable option |
+| `multiplayer-fabric-skills` | Project SOP library — Claude Code skills evolve with the codebase; removing it severs the process documentation from the code it governs |
+| `multiplayer-fabric-predictive-bvh` | Codegen source for `multiplayer-fabric-godot/thirdparty/misc/predictive_bvh.h` — the fabric cannot run without this generated header |
 
 ## 0.5. Stall check — when simplification alone is not unblocking progress
 
@@ -121,10 +123,12 @@ grep -r '"0000000000000000000000000000000000000000000000000000000000000000"' \
 ```
 
 Before scoring, verify actual consumers — grep for the submodule name across
-sibling modules' `mix.exs`, `project.godot`, `*.yml`, and `*.toml`. A submodule
-with zero cross-refs looks removable but may be a load-bearing library if its
-consumers are in another layer (e.g. `aria-storage` appears unreferenced until
-you check zone-backend and zone-console).
+sibling modules' `mix.exs`, `project.godot`, `*.yml`, `*.toml`, `*.h`, `*.c`,
+and `*.cpp`. A submodule with zero cross-refs looks removable but may be a
+load-bearing library if its consumers are in another layer (e.g. `aria-storage`
+appears unreferenced until you check zone-backend and zone-console;
+`multiplayer-fabric-predictive-bvh` generates a C header consumed by
+`multiplayer-fabric-godot/thirdparty/misc/predictive_bvh.h`).
 
 Note findings that indicate mass with no load:
 
