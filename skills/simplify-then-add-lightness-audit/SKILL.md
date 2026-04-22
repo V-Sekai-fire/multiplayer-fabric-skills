@@ -28,6 +28,31 @@ Key tests from the ADR to apply to every candidate:
 - Is there a simpler thing already present that does the same job?
 - Does it couple two systems that should be independent?
 
+### Strategic Delegation — mandatory pre-filter
+
+Before scoring any candidate, classify it:
+
+- **Core uncertainty** (defines whether the project works at all — character
+  motion, UX interaction, spatial partitioning, transport protocol): these stay
+  in-house regardless of commit count or consumer count. Do not nominate them.
+- **Mature, well-understood component** (databases, S3 storage, OS libraries,
+  external game APIs): these are delegation candidates.
+- **License-constrained fork** (e.g. BSL-licensed upstream replaced by own
+  build): the fork is load-bearing by compliance necessity. Do not nominate it
+  for removal without a licence-compatible replacement already in hand.
+
+Known permanent exclusions for this repo:
+
+| Submodule | Reason to keep |
+|---|---|
+| `cockroach` | BSL licence on upstream — own build is the compliant alternative |
+| `multiplayer-fabric-humanoid-project` | In-house character motion research (core uncertainty) |
+| `multiplayer-fabric-interaction-system` | In-house UX/XR interaction research (core uncertainty) |
+| `multiplayer-fabric-artifacts-mmog` | Taskweft test harness on a stable external platform — validates the planner before the home platform is ready (Risk Sequencing) |
+| `multiplayer-fabric-rx` | Integration environment validating the full Godot stack (VRM, XR, game framework, humanoid) works together — core uncertainty for stack cohesion |
+| `multiplayer-fabric-baker` | Godot asset baker — should feed into desync for storage; missing integration is a bug, not dead weight |
+| `multiplayer-fabric-desync` | Content-addressed storage (casync) — intended storage backend for baker output; keep until baker→desync integration is complete |
+
 ## 1. Inventory the codebase
 
 Run these before generating the distribution so weights are grounded in facts,
@@ -49,6 +74,12 @@ grep -r '"0000000000000000000000000000000000000000000000000000000000000000"' \
 # For each addon submodule, grep the rest of the tree for its directory name
 ```
 
+Before scoring, verify actual consumers — grep for the submodule name across
+sibling modules' `mix.exs`, `project.godot`, `*.yml`, and `*.toml`. A submodule
+with zero cross-refs looks removable but may be a load-bearing library if its
+consumers are in another layer (e.g. `aria-storage` appears unreferenced until
+you check zone-backend and zone-console).
+
 Note findings that indicate mass with no load:
 
 | Signal | Weight boost |
@@ -58,6 +89,7 @@ Note findings that indicate mass with no load:
 | CMake / build paths point outside the repo | +0.10 |
 | Self-described "work in progress" or "not finished" | +0.08 |
 | Duplicate of another mechanism already in the repo | +0.12 |
+| Couples to an external third-party API or platform with no infra consumer | +0.15 |
 | Legal / licence compliance risk | immediate escalation |
 
 ## 2. Generate the verbalized distribution
