@@ -52,6 +52,7 @@ Known permanent exclusions for this repo:
 | `multiplayer-fabric-rx` | Integration environment validating the full Godot stack (VRM, XR, game framework, humanoid) works together — core uncertainty for stack cohesion |
 | `multiplayer-fabric-baker` | Godot asset baker — should feed into desync for storage; missing integration is a bug, not dead weight |
 | `multiplayer-fabric-desync` | Content-addressed storage (casync) — intended storage backend for baker output; keep until baker→desync integration is complete |
+| `multiplayer-fabric-sandbox` | Proof-of-concept UGC programming language (RISC-V sandbox) — core uncertainty for user-generated content runtime |
 
 ## 1. Inventory the codebase
 
