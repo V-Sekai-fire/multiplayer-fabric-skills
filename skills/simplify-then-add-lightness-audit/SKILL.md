@@ -53,6 +53,7 @@ Known permanent exclusions for this repo:
 | `multiplayer-fabric-baker` | Godot asset baker — should feed into desync for storage; missing integration is a bug, not dead weight |
 | `multiplayer-fabric-desync` | Content-addressed storage (casync) — intended storage backend for baker output; keep until baker→desync integration is complete |
 | `multiplayer-fabric-sandbox` | Proof-of-concept UGC programming language (RISC-V sandbox) — core uncertainty for user-generated content runtime |
+| `multiplayer-fabric-webtransport` | Vendored fork — upstream requires patches that cannot be upstreamed; own build is the only viable option |
 
 ## 1. Inventory the codebase
 
