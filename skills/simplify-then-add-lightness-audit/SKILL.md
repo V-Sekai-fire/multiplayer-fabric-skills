@@ -160,6 +160,23 @@ git commit -m "Remove <path> — <one-line reason>"
 git push
 ```
 
+### ADR closure (never delete ADRs)
+
+Change the status prefix in the title line only. Use:
+- `Rejected` — for `Draft` or `Proposed` ADRs that were never adopted
+- `Superseded` — for `Accepted` ADRs replaced by a different decision
+
+```sh
+# Edit the title line: "# Draft: …" → "# Rejected: …"
+# Edit the title line: "# Accepted: …" → "# Superseded: …"
+git -C manuals add decisions/<file>.md
+git -C manuals commit -m "Close <file> — <one-line reason>"
+git -C manuals push
+git add manuals
+git commit -m "Sync submodules: close ADR <name>"
+git push
+```
+
 ### Banned image / dependency replacement
 
 Edit the offending file, replace the reference, verify it starts, then:
