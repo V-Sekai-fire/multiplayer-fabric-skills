@@ -55,6 +55,50 @@ Known permanent exclusions for this repo:
 | `multiplayer-fabric-sandbox` | Proof-of-concept UGC programming language (RISC-V sandbox) — core uncertainty for user-generated content runtime |
 | `multiplayer-fabric-webtransport` | Vendored fork — upstream requires patches that cannot be upstreamed; own build is the only viable option |
 
+## 0.5. Stall check — when simplification alone is not unblocking progress
+
+If the user reports the project is still not moving after repeated removal runs,
+shift the distribution framing from **dead-weight removal** to
+**feedback loop compression** (ADR principle: Feedback Loop Compression +
+Sequence Risks).
+
+Run these additional checks before generating the distribution:
+
+```sh
+# Commit velocity per submodule — last commit date
+for mod in <submodules>; do
+  git -C $mod log -1 --format="%ar %s"
+done
+
+# Are critical-path services gated behind optional profiles?
+grep -n "profiles:" <docker-compose files>
+
+# Are e2e / smoke tests wired to CI, or manual-only?
+find . -maxdepth 4 -name "*.spec.ts" -o -name "*e2e*" | grep -v ".git"
+grep -r "playwright\|cypress\|smoke" .github/workflows/ 2>/dev/null
+
+# Are core integrations wired? (e.g. baker→desync, zone-server→CI)
+# For each pair of related submodules, grep each for the other's name
+```
+
+The slowest feedback loop is the gap between "engineer makes a change" and
+"the critical assumption (e.g. players can connect) is verified." Identify it
+from git history: look for active repos with zero cross-references, optional
+service profiles, and e2e tests that only run manually.
+
+Reframe the distribution task when stalled:
+
+```
+name ONE barrier to remove that would compress the feedback loop between
+a code change and verifying the critical assumption. "Remove" includes:
+removing an optional-profile gate, removing dead config that hides service
+health, or removing the isolation between two systems that must be wired.
+Flag candidates that are actually ADDs disguised as removals — those require
+deliberate addition, not removal.
+```
+
+Return to standard removal framing once the critical feedback loop is closed.
+
 ## 1. Inventory the codebase
 
 Run these before generating the distribution so weights are grounded in facts,
@@ -92,6 +136,9 @@ Note findings that indicate mass with no load:
 | Self-described "work in progress" or "not finished" | +0.08 |
 | Duplicate of another mechanism already in the repo | +0.12 |
 | Couples to an external third-party API or platform with no infra consumer | +0.15 |
+| Active repo with zero cross-references to its intended consumer | +0.18 |
+| Service gated behind optional profile — never exercised by default | +0.18 |
+| E2e / smoke test exists but is manual-only, not wired to CI | +0.15 |
 | Legal / licence compliance risk | immediate escalation |
 
 ## 2. Generate the verbalized distribution
