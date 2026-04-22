@@ -56,6 +56,10 @@ Known permanent exclusions for this repo:
 | `multiplayer-fabric-webtransport` | Vendored fork — upstream requires patches that cannot be upstreamed; own build is the only viable option |
 | `multiplayer-fabric-skills` | Project SOP library — Claude Code skills evolve with the codebase; removing it severs the process documentation from the code it governs |
 | `multiplayer-fabric-predictive-bvh` | Codegen source for `multiplayer-fabric-godot/thirdparty/misc/predictive_bvh.h` — the fabric cannot run without this generated header |
+| `ZoneConsole.AccessKit` (`zone-console/lib/zone_console/access_kit.ex`) | Planned integration point for native accessibility tree (NSAccessibility / AT-SPI2 / UI Automation) — needs plumbing into Godot, zones, and backends; stub + test are forward scaffolding, not dead weight |
+| `Uro.IdentityProofController` + `Uro.UserRelations` identity_proof functions | Planned web-of-trust feature — to be wired via ReBAC (Taskweft.ReBAC) with HTTP routes; unrouted now but not dead weight |
+| `Uro.Uploaders.UserIcon` (`zone-backend/lib/uro/uploaders/user_icon.ex`) | Planned Waffle→S3→desync upload integration — needs wiring to S3 bucket and desync chunk store; zero callers now but load-bearing once the upload pipeline is wired |
+| `Uro.EnsureUserNotLockedPlug` (`zone-backend/lib/uro/plug/ensure_user_not_locked_plug.ex`) | Planned account-lock security check — to be wired into router pipelines once account locking is implemented; not dead weight |
 
 ## 0.5. Stall check — when simplification alone is not unblocking progress
 
