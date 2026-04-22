@@ -211,12 +211,18 @@ git push
 
 ### ADR closure (never delete ADRs)
 
-Change the status prefix in the title line only. Use:
-- `Rejected` — for `Draft` or `Proposed` ADRs that were never adopted
-- `Superseded` — for `Accepted` ADRs replaced by a different decision
+Change the status prefix in the title line only. Only close an ADR when a
+**concrete replacement already exists** — do not close drafts merely because
+they are old or were never adopted.
+
+Use:
+- `Superseded` — when a specific newer decision replaces this one (name it in the commit message)
+
+Do NOT use `Rejected`. Draft ADRs that were never adopted stay as `Draft`
+until a superseding decision exists.
 
 ```sh
-# Edit the title line: "# Draft: …" → "# Rejected: …"
+# Edit the title line: "# Draft: …" → "# Superseded: …"
 # Edit the title line: "# Accepted: …" → "# Superseded: …"
 git -C manuals add decisions/<file>.md
 git -C manuals commit -m "Close <file> — <one-line reason>"
