@@ -60,6 +60,8 @@ Known permanent exclusions for this repo:
 | `Uro.IdentityProofController` + `Uro.UserRelations` identity_proof functions | Planned web-of-trust feature — to be wired via ReBAC (Taskweft.ReBAC) with HTTP routes; unrouted now but not dead weight |
 | `Uro.Uploaders.UserIcon` (`zone-backend/lib/uro/uploaders/user_icon.ex`) | Planned Waffle→S3→desync upload integration — needs wiring to S3 bucket and desync chunk store; zero callers now but load-bearing once the upload pipeline is wired |
 | `Uro.EnsureUserNotLockedPlug` (`zone-backend/lib/uro/plug/ensure_user_not_locked_plug.ex`) | Planned account-lock security check — to be wired into router pipelines once account locking is implemented; not dead weight |
+| `ZoneConsole.FabricMMOGKeyStore` (`zone-console/lib/zone_console/fabric_mmog_keystore.ex`) | Planned AES-128 asset key store for the baker encryption pipeline (`encrypt_pck` currently disabled); uses OS keychain (correct — zone-console has no DB); Elixir port of `modules/keychain/fabric_mmog_keystore.cpp`; not dead weight |
+| `Taskweft.HRR.*` (`zone-taskweft/lib/taskweft/hrr/`) | Intended HRR+Ecto integration — SQLite-backed Ecto adapter built on `Taskweft.NIF.hrr_*` math; forward scaffolding for the memory store; do not remove even with zero callers |
 
 ## 0.5. Stall check — when simplification alone is not unblocking progress
 
