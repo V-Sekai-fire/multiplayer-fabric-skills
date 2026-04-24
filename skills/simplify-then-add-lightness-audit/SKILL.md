@@ -61,7 +61,7 @@ Known permanent exclusions for this repo:
 | `Uro.Uploaders.UserIcon` (`zone-backend/lib/uro/uploaders/user_icon.ex`) | Planned Waffle→S3→desync upload integration — needs wiring to S3 bucket and desync chunk store; zero callers now but load-bearing once the upload pipeline is wired |
 | `Uro.EnsureUserNotLockedPlug` (`zone-backend/lib/uro/plug/ensure_user_not_locked_plug.ex`) | Planned account-lock security check — to be wired into router pipelines once account locking is implemented; not dead weight |
 | `ZoneConsole.FabricMMOGKeyStore` (`zone-console/lib/zone_console/fabric_mmog_keystore.ex`) | Planned AES-128 asset key store for the baker encryption pipeline (`encrypt_pck` currently disabled); uses OS keychain (correct — zone-console has no DB); Elixir port of `modules/keychain/fabric_mmog_keystore.cpp`; not dead weight |
-| `Taskweft.HRR.*` (`zone-taskweft/lib/taskweft/hrr/`) | Intended HRR+Ecto integration — SQLite-backed Ecto adapter built on `Taskweft.NIF.hrr_*` math; forward scaffolding for the memory store; do not remove even with zero callers |
+| `Taskweft.HRR.*` (`multiplayer-fabric-taskweft/lib/taskweft/hrr/`) | Episodic memory layer for the RECTGTN HTN planner: past plan episodes stored as HRR vectors in SQLite; retriever scores candidates by cosine similarity to current entity state, enriching `EntityPlanner.plan/2` with relevant context. Integration path: probe HRR memory → inject ranked episodes into domain state → plan → store result. Do not remove even with zero callers. |
 
 ## 0.5. Stall check — when simplification alone is not unblocking progress
 
