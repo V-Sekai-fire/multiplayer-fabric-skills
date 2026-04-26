@@ -71,44 +71,61 @@ EOF
 
 If that fails, run `activate_simulator.sh` with sudo directly (see step 1).
 
-## 3. Start the zone server (headless)
+## 3. Stop the Docker zone server (if running)
+
+The Docker image `ghcr.io/v-sekai-fire/zone-fabric:latest` is `amd64`-only and
+crashes on Apple Silicon (Godot Mono build, missing .NET assemblies). It binds
+UDP 7443 but cannot serve connections. Stop it before running locally:
+
+```sh
+docker stop multiplayer-fabric-hosting-zone-server-1 2>/dev/null || true
+```
+
+Verify port 7443 is free:
+
+```sh
+lsof -i udp:7443
+# Should show nothing (or only your Godot process after step 4)
+```
+
+## 4. Start the local Godot zone server
 
 ```sh
 GODOT=multiplayer-fabric-godot/bin/godot.macos.editor.dev.arm64
 ABYSSAL=multiplayer-fabric-abyssal
 
-"$GODOT" --headless --path "$ABYSSAL" --scene scenes/main.tscn > /tmp/zone_server.log 2>&1 &
+"$GODOT" --headless --path "$ABYSSAL" --scene scenes/zone_server.tscn > /tmp/zone_server.log 2>&1 &
 echo "Zone server PID: $!"
 ```
 
 Wait ~3 s then confirm it is listening:
 
 ```sh
-grep -E "(QUIC|transport parameter|zone_curtain)" /tmp/zone_server.log | head -5
+lsof -i udp:7443   # must show godot.macos process
+grep "cert_hash" /tmp/zone_server.log
 ```
 
 Expected:
 ```
-[zone_curtain] zone=0 bake surfaces=1
-[zone_curtain] zone=1 bake surfaces=1
-92c2b71d: Sending transport parameter TLS extension ...
+{"cert_hash":"<base64>","event":"ready","port":7443}
 ```
 
-## 4. Launch the observer scene (OpenXR client)
+## 5. Launch the observer scene (OpenXR client)
 
 ```sh
 "$GODOT" --path "$ABYSSAL" --scene scenes/observer.tscn > /tmp/observer.log 2>&1 &
 ```
 
-## 5. Verify pass condition
+## 6. Verify pass condition
 
-After ~5 s:
+After ~8 s:
 
 ```sh
 grep -E "(OpenXR initialised|connecting|FabricPlayerXR)" /tmp/observer.log
+grep "recv" /tmp/zone_server.log | wc -l   # should be > 0
 ```
 
-Expected:
+Expected observer log:
 
 ```
 OpenXR: Created instance for OpenXR 1.1.54
@@ -116,9 +133,17 @@ FabricClient: connecting to 127.0.0.1:7443
 FabricPlayerXR: OpenXR initialised
 ```
 
-The Meta XR Simulator window shows **"Multiplayer Sessions"** in its side panel
-with the current session listed as **Alpha (Current)**. Additional Godot
-instances appear as Charlie, Delta, etc.
+Expected zone server log (datagrams arriving):
+
+```
+{"event":"recv","len":100}
+{"event":"recv","len":100}
+...
+```
+
+The Meta XR Simulator viewport switches from the default outdoor scene to
+**Godot's rendered environment** (slate walls, terracotta floor). The
+**Multiplayer Sessions** side panel shows the active session.
 
 ### Screenshot the simulator
 
@@ -132,7 +157,7 @@ Get current window position if it has moved:
 osascript -e 'tell app "System Events" to tell process "MetaXRSimulator" to get (position of window 1) & (size of window 1)'
 ```
 
-## 6. Teardown
+## 7. Teardown
 
 ```sh
 pkill -f "godot.macos.editor.dev.arm64"
@@ -146,10 +171,13 @@ pkill -f "godot.macos.editor.dev.arm64"
 | `VK_ERROR_EXTENSION_NOT_PRESENT: VK_KHR_portability_enumeration` | Harmless on Apple Silicon — Metal path still works |
 | Activation toggle hard to click via accessibility | Use `activate_simulator.sh` with sudo as fallback |
 | `--headless` zone server also initialises OpenXR | Expected — runtime loads but submits no frames |
+| Docker zone server (`zone-fabric:latest`) crashes on Apple Silicon | `amd64`-only image; Godot Mono missing .NET assemblies — stop the container and use local Godot zone server instead |
+| `WebTransportPeer.create_server()` "server already listening" | `FabricMultiplayerPeer.create_server()` calls factory 4× for channel ports — use `WebTransportPeer` directly in `zone_server.tscn` instead |
 
 ## Reference
 
 - `multiplayer-fabric-meta/activate_smoke_test.exs` — Elixir/CRDB activation script
 - `multiplayer-fabric-meta/MetaXRSimulator.app/Contents/Resources/MetaXRSimulator/activate_simulator.sh`
 - `multiplayer-fabric-abyssal/scenes/observer.tscn` — XR observer scene
-- `multiplayer-fabric-abyssal/scenes/main.tscn` — zone server scene
+- `multiplayer-fabric-abyssal/scenes/zone_server.tscn` — headless zone server scene
+- `multiplayer-fabric-abyssal/scripts/fabric_server.gd` — WebTransportPeer server script
