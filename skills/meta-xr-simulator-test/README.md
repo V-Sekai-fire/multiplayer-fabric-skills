@@ -1,7 +1,7 @@
 # SOP: Meta XR Simulator Test
 
-Run a Godot project against the Meta XR Simulator on macOS, capture a screenshot
-of the 2D test results panel and video of the XR view using macOS native tools only.
+Run a Godot project against the Meta XR Simulator on macOS, capture screenshots
+of the 2D test results and XR view using window ID detection (no hardcoded coordinates).
 
 ## Prerequisites
 
@@ -29,78 +29,45 @@ sudo bash /path/to/MetaXRSimulator.app/Contents/Resources/MetaXRSimulator/activa
 openxr/enabled=true
 ```
 
-`test_main.gd` must cap FPS and use a time-based quit:
-```gdscript
-Engine.max_fps = 60
-const QUIT_AFTER_SECONDS := 30.0
-var _elapsed := 0.0
+`test_main.gd` must:
+- Cap FPS: `Engine.max_fps = 60`
+- Use time-based quit: `QUIT_AFTER_SECONDS := 30.0`
+- Stamp window title with a ULID for unique run identification:
+  ```gdscript
+  DisplayServer.window_set_title("My Test [%s]" % _gen_ulid())
+  ```
 
-func _process(delta: float) -> void:
-    _elapsed += delta
-    if _elapsed >= QUIT_AFTER_SECONDS:
-        get_tree().quit()
-```
+## 3. Capture windows by CGWindow ID (no hardcoded coords)
 
-## 3. Capture screenshot (macOS screencapture)
+Use Swift to get CGWindow IDs, then `screencapture -l <wid>` to capture each window independently of position:
 
 ```sh
-GODOT=/path/to/godot.macos.editor.dev.double.arm64
-PROJECT=/path/to/project
+# Get window IDs
+WINDOWS=$(swift -e '
+import CoreGraphics
+let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly,.excludeDesktopElements], kCGNullWindowID) as! [[String:Any]]
+for w in list {
+  let owner = (w[kCGWindowOwnerName as String] as? String) ?? ""
+  let wid   = (w[kCGWindowNumber as String] as? Int) ?? 0
+  if owner.lowercased().contains("godot") { print("godot \(wid)") }
+  if owner == "MetaXRSimulator" { print("sim \(wid)") }
+}
+' 2>/dev/null)
 
-"$GODOT" --path "$PROJECT" &
-GODOT_PID=$!
-sleep 5
+GODOT_WID=$(echo "$WINDOWS" | grep "^godot" | awk '{print $2}' | head -1)
+SIM_WID=$(echo "$WINDOWS"   | grep "^sim"   | awk '{print $2}' | head -1)
 
-# Screenshot the full screen
-screencapture -x /tmp/test-screenshot.png
-
-# Screenshot a specific window by ID
-WIN_ID=$(osascript -e \
-  'tell app "System Events" to id of first window of \
-   (first process whose name is "MetaXRSimulator")')
-screencapture -x -l "$WIN_ID" /tmp/xr-window.png
-
-wait $GODOT_PID
+screencapture -x -l "$GODOT_WID" godot-window.png
+screencapture -x -l "$SIM_WID"   xr-window.png
 ```
 
-## 4. Capture video (macOS screencapture -V)
-
-`screencapture -V <seconds>` records video for N seconds then saves.
-Must be run while the target window is visible.
-
-```sh
-"$GODOT" --path "$PROJECT" &
-GODOT_PID=$!
-sleep 5
-
-# Record 10 seconds of the full screen as video
-screencapture -V 10 /tmp/test-recording.mov
-
-wait $GODOT_PID
-```
-
-## 5. Capture video (Godot built-in MovieWriter)
-
-For recording just the Godot viewport with no external tools:
-
-Add to `project.godot`:
-```
-[movie_writer]
-movie_file="res://test-output.avi"
-```
-
-Or pass on command line:
-```sh
-"$GODOT" --path "$PROJECT" --movie /tmp/test-output.avi
-```
-
-## 6. XR keyboard controls (Meta XR Simulator)
+## 4. XR keyboard controls (Meta XR Simulator)
 
 | Key | Action |
 |-----|--------|
 | W/A/S/D | Move head forward/left/back/right |
 | R/F | Move head up/down |
-| Arrow keys | Rotate head |
+| Arrow keys | Rotate head (tilt up = key code 126) |
 | Space | Reset controller poses |
 | 2 | Poke interaction |
 | 3 | Pinch |
@@ -110,15 +77,38 @@ Send while simulator is frontmost:
 ```sh
 osascript -e 'tell application "System Events"
   set frontmost of (first process whose name is "MetaXRSimulator") to true
-  key code 126  -- up arrow
   delay 0.3
-  keystroke "2" -- poke
+  key code 126  -- up arrow: tilt head up
+  delay 0.3
+  key code 126
 end tell'
+```
+
+## 5. Ego-centric headlamp
+
+Parent `Label3D` nodes to the `XRCamera3D` at fixed camera-space offsets. They dip
+into the lower-left corner of the XR viewport showing world-centric / ego-centric
+axis names (RIGHT/MODEL_LEFT, UP/MODEL_TOP, BACK/MODEL_FRONT).
+
+## 6. World-centric debug sky
+
+Use `s2h_drawSkybox()` from `godot-ShaderToHuman` in a `sky` shader type.
+`POSITION` (camera world pos) is available in sky shaders as the ray origin.
+
+## 7. Capture video (screencapture native)
+
+```sh
+# Record N seconds — interactive, click to stop early
+screencapture -V 10 recording.mov
+
+# Or use Godot's built-in MovieWriter (no external tool)
+# Add to project.godot: [movie_writer] movie_file="res://out.avi"
+# Or pass: godot --movie /tmp/out.avi
 ```
 
 ## Pass condition
 
-- Godot loads without script errors
-- 2D panel shows PASS/FAIL rows
-- XR simulator shows canvas plane
-- No `File not found` in Godot stderr
+- Godot window title shows a unique ULID each run
+- `godot-window.png` shows PASS/FAIL test result rows
+- `xr-window.png` shows S2H grid sky + ego headlamp labels + canvas plane
+- No `File not found` errors in Godot stderr
