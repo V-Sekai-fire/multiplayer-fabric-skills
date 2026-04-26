@@ -3,11 +3,17 @@
 Run a Godot project against the Meta XR Simulator on macOS, capture screenshots
 of the 2D test results and XR view using window ID detection (no hardcoded coordinates).
 
-## Prerequisites
+## Paths
 
-- Meta XR Simulator activated as the OpenXR runtime
-- Godot binary available
-- Test project at a known path
+| Resource | Path (relative to monorepo root) |
+|---|---|
+| Godot binary | `multiplayer-fabric-godot/bin/godot.macos.editor.dev.double.arm64` |
+| Project | `multiplayer-fabric-interaction-system-project/` |
+| Simulator app | `multiplayer-fabric-meta/MetaXRSimulator.app` |
+| Capture script | `artifacts/capture_windows.sh` |
+| Artifacts out | `artifacts/` |
+
+Monorepo root: `/Users/ernest.lee/Downloads/multiplayer-fabric/`
 
 ## 1. Verify simulator is activated
 
@@ -18,10 +24,17 @@ cat /usr/local/share/openxr/1/active_runtime.json | grep name
 
 If not active:
 ```sh
-sudo bash /path/to/MetaXRSimulator.app/Contents/Resources/MetaXRSimulator/activate_simulator.sh
+sudo bash /Users/ernest.lee/Downloads/multiplayer-fabric/multiplayer-fabric-meta/MetaXRSimulator.app/Contents/Resources/MetaXRSimulator/activate_simulator.sh
 ```
 
-## 2. Project requirements
+## 2. Ensure simulator is running
+
+```sh
+pgrep -l MetaXRSimulator || open /Users/ernest.lee/Downloads/multiplayer-fabric/multiplayer-fabric-meta/MetaXRSimulator.app
+# wait ~3s if just launched
+```
+
+## 3. Project requirements
 
 `project.godot` must have:
 ```
@@ -37,15 +50,58 @@ openxr/enabled=true
   DisplayServer.window_set_title("My Test [%s]" % _gen_ulid())
   ```
 
-## 3. Capture windows by CGWindow ID (no hardcoded coords)
-
-Use Swift to get CGWindow IDs, then `screencapture -l <wid>` to capture each window independently of position:
+## 4. Launch Godot (background)
 
 ```sh
-# Get window IDs
+GODOT=/Users/ernest.lee/Downloads/multiplayer-fabric/multiplayer-fabric-godot/bin/godot.macos.editor.dev.double.arm64
+PROJECT=/Users/ernest.lee/Downloads/multiplayer-fabric/multiplayer-fabric-interaction-system-project
+"$GODOT" --path "$PROJECT" &
+```
+
+**Do NOT** pass `--quit-after N` — that counts frames, not seconds. The project's
+own `QUIT_AFTER_SECONDS` timer handles shutdown.
+
+## 5. Wait for XR session to initialise, then capture
+
+```sh
+sleep 8
+GODOT_PID=$(pgrep "godot.macos.edi" | head -1)
+bash /Users/ernest.lee/Downloads/multiplayer-fabric/artifacts/capture_windows.sh \
+  "$GODOT_PID" \
+  /Users/ernest.lee/Downloads/multiplayer-fabric/artifacts
+```
+
+Output:
+```
+ULID=<id>  Godot wid=<n>  Sim wid=<n>
+Saved <ULID>-godot.png
+Saved <ULID>-xr.png
+```
+
+## capture_windows.sh internals
+
+```bash
+#!/bin/bash
+# Usage: capture_windows.sh <godot_pid> <out_dir>
+GODOT_PID=$1
+OUT_DIR=${2:-/tmp}
+
+ULID=$(python3 -c "
+import time, random
+chars = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+t = int(time.time() * 1000)
+result = ''
+for i in range(10):
+    result = chars[t & 0x1F] + result
+    t >>= 5
+for i in range(16):
+    result += chars[random.randint(0, 31)]
+print(result)
+")
+
 WINDOWS=$(swift -e '
 import CoreGraphics
-let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly,.excludeDesktopElements], kCGNullWindowID) as! [[String:Any]]
+let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID) as! [[String:Any]]
 for w in list {
   let owner = (w[kCGWindowOwnerName as String] as? String) ?? ""
   let wid   = (w[kCGWindowNumber as String] as? Int) ?? 0
@@ -57,11 +113,20 @@ for w in list {
 GODOT_WID=$(echo "$WINDOWS" | grep "^godot" | awk '{print $2}' | head -1)
 SIM_WID=$(echo "$WINDOWS"   | grep "^sim"   | awk '{print $2}' | head -1)
 
-screencapture -x -l "$GODOT_WID" godot-window.png
-screencapture -x -l "$SIM_WID"   xr-window.png
+if [ -n "$GODOT_WID" ]; then
+  screencapture -x -l "$GODOT_WID" "$OUT_DIR/${ULID}-godot.png"
+fi
+if [ -n "$SIM_WID" ]; then
+  screencapture -x -l "$SIM_WID" "$OUT_DIR/${ULID}-xr.png"
+fi
 ```
 
-## 4. XR keyboard controls (Meta XR Simulator)
+Key points:
+- `CGWindowListCopyWindowInfo` via Swift — no hardcoded coordinates
+- `screencapture -x -l <wid>` captures a specific window by CGWindow ID regardless of position
+- ULID names artifacts for sortable, unique identification
+
+## 6. XR keyboard controls (Meta XR Simulator)
 
 | Key | Action |
 |-----|--------|
@@ -84,31 +149,31 @@ osascript -e 'tell application "System Events"
 end tell'
 ```
 
-## 5. Ego-centric headlamp
+## 7. S2H debug sky shader
 
-Parent `Label3D` nodes to the `XRCamera3D` at fixed camera-space offsets. They dip
-into the lower-left corner of the XR viewport showing world-centric / ego-centric
-axis names (RIGHT/MODEL_LEFT, UP/MODEL_TOP, BACK/MODEL_FRONT).
+All debug info (ULID, head/controller positions, distance to canvas, elapsed time)
+renders in `debug_sky.gdshader` via `shader_type sky` + GLSL preprocessor:
+- `s2h_drawSkybox(ctx)` — world grid + horizon
+- `ContextGather` text overlay composited over sky colour
 
-## 6. World-centric debug sky
+Key: sky shaders use the GLSL preprocessor (supports `#include`). For
+spatial/canvas_item shaders, `s2h.gdshaderinc` requires `g_miniFont[192]` (explicit
+size) — unsized `g_miniFont[]` fails GDShader tokenizer.
 
-Use `s2h_drawSkybox()` from `godot-ShaderToHuman` in a `sky` shader type.
-`POSITION` (camera world pos) is available in sky shaders as the ray origin.
-
-## 7. Capture video (screencapture native)
+## 8. Capture video (screencapture native)
 
 ```sh
 # Record N seconds — interactive, click to stop early
 screencapture -V 10 recording.mov
 
 # Or use Godot's built-in MovieWriter (no external tool)
-# Add to project.godot: [movie_writer] movie_file="res://out.avi"
-# Or pass: godot --movie /tmp/out.avi
+# godot --movie /tmp/out.avi
 ```
 
 ## Pass condition
 
+- Both `<ULID>-godot.png` and `<ULID>-xr.png` saved in `artifacts/`
 - Godot window title shows a unique ULID each run
 - `godot-window.png` shows PASS/FAIL test result rows
-- `xr-window.png` shows S2H grid sky + ego headlamp labels + canvas plane
+- `xr-window.png` shows S2H grid sky + ULID text overlay + canvas plane with test UI
 - No `File not found` errors in Godot stderr
