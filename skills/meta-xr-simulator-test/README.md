@@ -10,7 +10,7 @@ of the 2D test results and XR view using window ID detection (no hardcoded coord
 | Godot binary | `multiplayer-fabric-godot/bin/godot.macos.editor.dev.double.arm64` |
 | Project | `multiplayer-fabric-interaction-system-project/` |
 | Simulator app | `multiplayer-fabric-meta/MetaXRSimulator.app` |
-| Capture script | `artifacts/capture_windows.sh` |
+| Capture script | `multiplayer-fabric-interaction-system-project/capture_windows.sh` |
 | Artifacts out | `artifacts/` |
 
 Monorepo root: `/Users/ernest.lee/Downloads/multiplayer-fabric/`
@@ -66,7 +66,7 @@ own `QUIT_AFTER_SECONDS` timer handles shutdown.
 ```sh
 sleep 8
 GODOT_PID=$(pgrep "godot.macos.edi" | head -1)
-bash /Users/ernest.lee/Downloads/multiplayer-fabric/artifacts/capture_windows.sh \
+bash /Users/ernest.lee/Downloads/multiplayer-fabric/multiplayer-fabric-interaction-system-project/capture_windows.sh \
   "$GODOT_PID" \
   /Users/ernest.lee/Downloads/multiplayer-fabric/artifacts
 ```
